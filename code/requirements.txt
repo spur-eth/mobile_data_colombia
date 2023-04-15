@@ -1,0 +1,16 @@
+mobilkit[complete]
+geopandas
+numpy
+pandas
+pyarrow
+contextily
+matplotlib
+seaborn
+pytz
+statsmodels
+dask
+shapely
+jupyter
+ipykernel
+unidecode
+plotly
