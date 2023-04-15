@@ -14,3 +14,4 @@ jupyter
 ipykernel
 unidecode
 plotly
+python-dotenv
