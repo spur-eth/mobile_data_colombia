@@ -9,6 +9,12 @@ __pycache__/
 # Mac
 .DS_Store
 
+# parquet files
+*.parquet
+
+# gun-zipped files
+*.gz
+
 # Distribution / packaging
 .Python
 build/
