@@ -1,5 +1,6 @@
 import glob
 import os
+import math
 import dask.dataframe as dd
 import geopandas as gpd
 import dask_geopandas as ddgpd
@@ -118,3 +119,41 @@ def assign_points_to_regions(points_df, regions_gdf, cols_to_keep):
     joined_gdf = gpd.sjoin(points_gdf, regions_gdf, how="left", op="within")
     joined_gdf = joined_gdf[cols_to_keep]
     return joined_gdf
+
+def compute_home_lat_lngs_for_users(uids_pass_qc, pq_dir, out_dir, regions_gdf, num_users=20000, 
+                                    cols = ['uid', 'datetime', 'lat', 'lng'], 
+                                    gdf_cols=['Area', 'MUNCod', 'NOMMun', 'ZAT', 'UTAM', 'stratum']):
+    
+    pings_paths = glob.glob((pq_dir + '*.parquet'))
+    dataset = ds.dataset(pings_paths, format="parquet")
+    total_users = len(uids_pass_qc)
+    user_count = 0
+
+    expected_iter = math.ceil(len(uids_pass_qc)/num_users)
+    pbar_load = tqdm(total=(expected_iter))
+    pbar_process = tqdm(total=(expected_iter))
+    pbar_write = tqdm(total=(expected_iter))
+
+    while (total_users - user_count) > 0:
+        user_count_updated = user_count + num_users
+        sel_users = uids_pass_qc[user_count:user_count_updated]
+        pbar_load.set_description(f"Loading user data from users {user_count} to {user_count_updated}")
+        df = get_df_for_sel_users(dataset, sel_users, cols)
+        pbar_load.update(1)
+        pbar_process.set_description(f"Computing home location user data from users {user_count} to {user_count_updated}")
+        hl_df = find_home_lat_lng(df, start_night='22:00', end_night='06:00')
+        pbar_process.update(1)
+        joined_df = assign_points_to_regions(points_df=hl_df, regions_gdf=regions_gdf, 
+                                     cols_to_keep=(['uid', 'lat', 'lng'] + gdf_cols))
+        outfilename = f'home_locs_for_{user_count}_{user_count_updated}_passqc_users'
+        print(outfilename)
+        pbar_write.set_description(f"Writing home location user data from users {user_count} to {user_count_updated}")
+        write_to_pq(joined_df, out_dir, filename=outfilename)
+        pbar_write.update(1)
+        user_count = user_count_updated
+
+    pbar_load.close()
+    pbar_process.close()
+    pbar_write.close()
+
+    return
