@@ -1,10 +1,14 @@
 import glob
 import os
 import dask.dataframe as dd
+import geopandas as gpd
 import dask_geopandas as ddgpd
 from mobilkit.loader import crop_spatial as mk_crop_spatial
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pyarrow.dataset as ds
+from skmob import TrajDataFrame
+from skmob.measures.individual import home_location
 
 from tqdm.notebook import tqdm
 
@@ -95,3 +99,22 @@ def from_month_write_filter_days_to_pq(data_folder: str, gdf, data_year: str, ye
         filename = f"{year}_{month}_{day_name}.parquet"
         write_to_pq(df=ddf_in_regions.compute(), out_dir=out_dir, filename=filename)
     return
+
+def get_df_for_sel_users(dataset, sel_users, cols):
+    table = dataset.to_table(columns=cols, filter=ds.field('uid').isin(sel_users))
+    df = table.to_pandas().reset_index()
+    df = df.drop(['index'], axis=1)
+    return df
+
+def find_home_lat_lng(df, start_night='22:00', end_night='06:00'):
+    traj_df = TrajDataFrame(df, user_id='uid', latitude='lat', longitude='lng', datetime='datetime')
+    hl_df = home_location(traj_df, start_night=start_night, end_night=end_night)
+    return hl_df 
+
+def assign_points_to_regions(points_df, regions_gdf, cols_to_keep):
+    geometry = gpd.points_from_xy(points_df['lng'], points_df['lat'])
+    points_gdf = gpd.GeoDataFrame(points_df, geometry=geometry, crs=regions_gdf.crs)
+    # Perform spatial join to assign points to regions
+    joined_gdf = gpd.sjoin(points_gdf, regions_gdf, how="left", op="within")
+    joined_gdf = joined_gdf[cols_to_keep]
+    return joined_gdf
