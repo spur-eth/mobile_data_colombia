@@ -6,16 +6,13 @@
 A flat part of Bogota city and some poorer neighborhoods on hills in the south that are now connected to the city center by a cable car that was recently built and opened in 2019. We want to study the impact of this cable car opening on the movements of people who live in that neighborhood compared to a similar area of the city that continues to lack a public transit connection to the city center. 
 
 ### Data:
-Providers (private companies) collect mobile phone data at a large scale that is available for purchase. We are considering buring the data and focusing on the relevant areas within Bogota (have to buy data for all of Colombia and filter to those pings from within the city).
-- Currently have two months worth of data for testing (have data from month after the opening of the cable car 2019, also a month from 2022)
+We obtained some data from providers (private companies) that collect mobile phone data at a large scale that is available for purchase in Colombia. This data is about 300 GB in size.
 
-### Goal 1: Do analysis to see if the month of data is good enough to be worth buying 2018 data (more expensive) and data from 2019 to study the impact of the cable car
-- How to know if it is good enough (2 key factors): How many observations appear in Bogota and what is their granularity and usefulness for tracking individual movements (e.g. can we see locations/movements between different neighborhoods?)
-
-### Goal 2: Map all the stratum, home and work locations for all the people living in Bogota that pass quality control to be able to compare this information across neighborhoods and station locations. 
-
-### Goal 3: Map the nearest POIs of all the pings to be able to match specific buildings to the ping locations 
-
+### Research question: What impacts does the opening of the cable car have on mobility of the people who live nearby? Does it open up new opportunties for them? 
+For example for these users (compared to those living in control areas): 
+- Do they make more trips? 
+- Do they make longer trips? 
+- Do they go to different types of places than control users?
 
 ## Setup 
 1) Get data from AWS.
