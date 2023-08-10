@@ -122,7 +122,8 @@ def assign_points_to_regions(points_df, regions_gdf, cols_to_keep):
 
 def compute_home_lat_lngs_for_users(uids_pass_qc, pq_dir, out_dir, regions_gdf, num_users=20000, 
                                     cols = ['uid', 'datetime', 'lat', 'lng'], 
-                                    gdf_cols=['Area', 'MUNCod', 'NOMMun', 'ZAT', 'UTAM', 'stratum']):
+                                    gdf_cols=['Area', 'MUNCod', 'NOMMun', 'ZAT', 'UTAM', 'stratum'], 
+                                    start_night='22:00', end_night='06:00'):
     
     pings_paths = glob.glob((pq_dir + '*.parquet'))
     dataset = ds.dataset(pings_paths, format="parquet")
