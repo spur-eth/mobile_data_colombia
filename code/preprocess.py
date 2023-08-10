@@ -1,10 +1,15 @@
 import glob
 import os
+import math
 import dask.dataframe as dd
+import geopandas as gpd
 import dask_geopandas as ddgpd
 from mobilkit.loader import crop_spatial as mk_crop_spatial
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pyarrow.dataset as ds
+from skmob import TrajDataFrame
+from skmob.measures.individual import home_location
 
 from tqdm.notebook import tqdm
 
@@ -94,4 +99,61 @@ def from_month_write_filter_days_to_pq(data_folder: str, gdf, data_year: str, ye
         day_name = day.split('/')[0]
         filename = f"{year}_{month}_{day_name}.parquet"
         write_to_pq(df=ddf_in_regions.compute(), out_dir=out_dir, filename=filename)
+    return
+
+def get_df_for_sel_users(dataset, sel_users, cols):
+    table = dataset.to_table(columns=cols, filter=ds.field('uid').isin(sel_users))
+    df = table.to_pandas().reset_index()
+    df = df.drop(['index'], axis=1)
+    return df
+
+def find_home_lat_lng(df, start_night='22:00', end_night='06:00'):
+    traj_df = TrajDataFrame(df, user_id='uid', latitude='lat', longitude='lng', datetime='datetime')
+    hl_df = home_location(traj_df, start_night=start_night, end_night=end_night)
+    return hl_df 
+
+def assign_points_to_regions(points_df, regions_gdf, cols_to_keep):
+    geometry = gpd.points_from_xy(points_df['lng'], points_df['lat'])
+    points_gdf = gpd.GeoDataFrame(points_df, geometry=geometry, crs=regions_gdf.crs)
+    # Perform spatial join to assign points to regions
+    joined_gdf = gpd.sjoin(points_gdf, regions_gdf, how="left", op="within")
+    joined_gdf = joined_gdf[cols_to_keep]
+    return joined_gdf
+
+def compute_home_lat_lngs_for_users(uids_pass_qc, pq_dir, out_dir, regions_gdf, num_users=20000, 
+                                    cols = ['uid', 'datetime', 'lat', 'lng'], 
+                                    gdf_cols=['Area', 'MUNCod', 'NOMMun', 'ZAT', 'UTAM', 'stratum']):
+    
+    pings_paths = glob.glob((pq_dir + '*.parquet'))
+    dataset = ds.dataset(pings_paths, format="parquet")
+    total_users = len(uids_pass_qc)
+    user_count = 0
+
+    expected_iter = math.ceil(len(uids_pass_qc)/num_users)
+    pbar_load = tqdm(total=(expected_iter))
+    pbar_process = tqdm(total=(expected_iter))
+    pbar_write = tqdm(total=(expected_iter))
+
+    while (total_users - user_count) > 0:
+        user_count_updated = user_count + num_users
+        sel_users = uids_pass_qc[user_count:user_count_updated]
+        pbar_load.set_description(f"Loading user data from users {user_count} to {user_count_updated}")
+        df = get_df_for_sel_users(dataset, sel_users, cols)
+        pbar_load.update(1)
+        pbar_process.set_description(f"Computing home location user data from users {user_count} to {user_count_updated}")
+        hl_df = find_home_lat_lng(df, start_night='22:00', end_night='06:00')
+        pbar_process.update(1)
+        joined_df = assign_points_to_regions(points_df=hl_df, regions_gdf=regions_gdf, 
+                                     cols_to_keep=(['uid', 'lat', 'lng'] + gdf_cols))
+        outfilename = f'home_locs_for_{user_count}_{user_count_updated}_passqc_users'
+        print(outfilename)
+        pbar_write.set_description(f"Writing home location user data from users {user_count} to {user_count_updated}")
+        write_to_pq(joined_df, out_dir, filename=outfilename)
+        pbar_write.update(1)
+        user_count = user_count_updated
+
+    pbar_load.close()
+    pbar_process.close()
+    pbar_write.close()
+
     return
