@@ -123,7 +123,7 @@ def assign_points_to_regions(points_df, regions_gdf, cols_to_keep):
 def compute_home_lat_lngs_for_users(uids_pass_qc, pq_dir, out_dir, regions_gdf, num_users=20000, 
                                     cols = ['uid', 'datetime', 'lat', 'lng'], 
                                     gdf_cols=['Area', 'MUNCod', 'NOMMun', 'ZAT', 'UTAM', 'stratum'], 
-                                    start_night='22:00', end_night='06:00', goal='home'):
+                                    start_time='22:00', end_time='06:00', goal='home'):
     
     pings_paths = glob.glob((pq_dir + '*.parquet'))
     dataset = ds.dataset(pings_paths, format="parquet")
@@ -142,7 +142,7 @@ def compute_home_lat_lngs_for_users(uids_pass_qc, pq_dir, out_dir, regions_gdf, 
         df = get_df_for_sel_users(dataset, sel_users, cols)
         pbar_load.update(1)
         pbar_process.set_description(f"Computing {goal} location user data from users {user_count} to {user_count_updated}")
-        hl_df = find_home_lat_lng(df, start_night='22:00', end_night='06:00')
+        hl_df = find_home_lat_lng(df, start_night=start_time, end_night=end_time)
         pbar_process.update(1)
         joined_df = assign_points_to_regions(points_df=hl_df, regions_gdf=regions_gdf, 
                                      cols_to_keep=(['uid', 'lat', 'lng'] + gdf_cols))
