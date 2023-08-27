@@ -112,8 +112,8 @@ def find_home_lat_lng(df, start_night='22:00', end_night='06:00'):
     hl_df = home_location(traj_df, start_night=start_night, end_night=end_night)
     return hl_df 
 
-def assign_points_to_regions(points_df, regions_gdf, cols_to_keep):
-    geometry = gpd.points_from_xy(points_df['lng'], points_df['lat'])
+def assign_points_to_regions(points_df, regions_gdf, cols_to_keep, point_lat_col='lat', point_lng_col='lng'):
+    geometry = gpd.points_from_xy(points_df[point_lng_col], points_df[point_lat_col])
     points_gdf = gpd.GeoDataFrame(points_df, geometry=geometry, crs=regions_gdf.crs)
     # Perform spatial join to assign points to regions
     joined_gdf = gpd.sjoin(points_gdf, regions_gdf, how="left", op="within")
