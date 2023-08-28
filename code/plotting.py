@@ -1,6 +1,8 @@
 import os
 os.environ['USE_PYGEOS'] = '0'
 import geopandas as gpd
+import numpy as np
+import pandas as pd
 import dask.dataframe as dd
 import folium as folium
 import matplotlib.pyplot as plt
@@ -70,7 +72,7 @@ def plot_homes_in_zones(shapefile_path, df, zones_col, zones_of_interest, lat_co
     folium.GeoJson(map_df, style_function = lambda x: style).add_to(map_obj)
     return map_obj, user_data
 
-def plot_stacked_bar_from_csv(filename, colormap='viridis'):
+def plot_stacked_bar_from_csv(filename, out_file, colormap='viridis'):
     # Read the csv data
     df = pd.read_csv(filename)
     
@@ -121,4 +123,6 @@ def plot_stacked_bar_from_csv(filename, colormap='viridis'):
     plt.title('Proportions by Group and Category', fontsize=12)
     plt.legend(bbox_to_anchor=(1.05, 0.95), loc='upper left', frameon=False)
     plt.tight_layout()
+    plt.savefig(f'{out_file}.pdf', dpi=200, bbox_inches='tight')
     plt.show()
+    
