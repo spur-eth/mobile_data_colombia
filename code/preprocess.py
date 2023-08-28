@@ -1,6 +1,7 @@
 import glob
 import os
 import math
+import pandas as pd 
 import dask.dataframe as dd
 import geopandas as gpd
 import dask_geopandas as ddgpd
@@ -85,10 +86,19 @@ def write_day(ddf_in_regions, out_dir, year, month, day):
     ddf_in_regions.to_parquet(path=filename, write_index=False) 
     return 
 
-def write_to_pq(df, out_dir, filename): 
+def write_to_pq(df, out_dir, filename, write_subdir='', write_csv=False): 
+    if len(write_subdir) > 0: 
+        out_dir = f'{out_dir}{write_subdir}/'
+        try: 
+            os.makedirs(out_dir)
+        except FileExistsError: 
+            pass
     table_name = f'{out_dir}{filename}.parquet'
     table = pa.Table.from_pandas(df)
     pq.write_table(table, table_name)
+    if write_csv == True: 
+        df.to_csv(f'{out_dir}{filename}.csv', index=False)
+    return
 
 def from_month_write_filter_days_to_pq(data_folder: str, gdf, data_year: str, year: str, out_dir:str):
     month = data_folder.split(data_year)[1].split('/')[0]
@@ -158,3 +168,23 @@ def compute_home_lat_lngs_for_users(uids_pass_qc, pq_dir, out_dir, regions_gdf, 
     pbar_write.close()
 
     return
+
+def read_visits(visits_fp, uid_treat_group_info=None):
+    # note the optional uid_treat_group_info needs to be a pandas df with 'uid', 'ZAT_home', 'Group' columns
+    visit_df = pd.read_csv(visits_fp)
+    visit_df = visit_df.rename(columns={'lat': 'lat_visit', 'lng': 'lng_visit'})
+    if uid_treat_group_info is not None: 
+        visit_df = visit_df.merge(uid_treat_group_info[['uid', 'ZAT_home', 'Group']], on='uid')
+    return visit_df 
+
+def calc_write_visit_pois(visit_df, regions_gdf, cols_to_keep, out_dir, subdir_name, outfilename, 
+    point_lat_col='lat_visit', point_lng_col='lng_visit'
+    ):
+    visits_w_poi_df = assign_points_to_regions(points_df=visit_df, regions_gdf=regions_gdf,
+        cols_to_keep=cols_to_keep, point_lat_col=point_lat_col, point_lng_col=point_lng_col)
+    num_mapped_visits = len(visits_w_poi_df) - sum(visits_w_poi_df.name.isna())
+    print(f'There were {len(visit_df)} visits in the file.')
+    print(f'{num_mapped_visits} instances occured where visits mapped to named POIs (some visits may map to multiple POIs).')
+    write_to_pq(visits_w_poi_df, out_dir, filename=outfilename, write_subdir=subdir_name, write_csv=True)
+    print(f'Wrote data to {outfilename}')
+    return visits_w_poi_df

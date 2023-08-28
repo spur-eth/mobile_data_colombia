@@ -3,6 +3,7 @@ os.environ['USE_PYGEOS'] = '0'
 import geopandas as gpd
 import dask.dataframe as dd
 import folium as folium
+import matplotlib.pyplot as plt
 
 def plot_frac_data_on_map(shapefile_path, ddf, frac=0.001):
     user_data = ddf.sample(frac=frac).compute()
@@ -68,3 +69,56 @@ def plot_homes_in_zones(shapefile_path, df, zones_col, zones_of_interest, lat_co
     style = {'fillColor': '#778899', 'color': '#778899', 'weight': 1.5, 'fillOpacity': 0.2} 
     folium.GeoJson(map_df, style_function = lambda x: style).add_to(map_obj)
     return map_obj, user_data
+
+def plot_stacked_bar_from_csv(filename, colormap='viridis'):
+    # Read the csv data
+    df = pd.read_csv(filename)
+    
+    # Separate the data into control and treatment groups
+    control = df[df['Group'] == 'Control'].sort_values('category')
+    treatment = df[df['Group'] == 'Treatment'].sort_values('category')
+    
+    # Extract category and proportion data
+    categories = control['category'].values
+    control_props = control['proportion'].values
+    treatment_props = treatment['proportion'].values
+    
+    # Get colors from the specified colormap
+    colors = plt.get_cmap(colormap)(np.linspace(0, 1, len(categories)))
+    
+    # Plotting
+    plt.figure(figsize=(4, 6))
+    
+    # Plot for Control
+    plt.bar(['Control'], control_props[0], label=categories[0], color=colors[0], alpha=0.7)
+    bottom_control = control_props[0]
+    for i in range(1, len(categories)):
+        plt.bar(['Control'], control_props[i], bottom=bottom_control, label=categories[i], color=colors[i], alpha=0.7)
+        bottom_control += control_props[i]
+        
+    # Plot for Treatment
+    plt.bar(['Treatment'], treatment_props[0], color=colors[0], alpha=0.7)
+    bottom_treatment = treatment_props[0]
+    for i in range(1, len(categories)):
+        plt.bar(['Treatment'], treatment_props[i], bottom=bottom_treatment, color=colors[i], alpha=0.7)
+        bottom_treatment += treatment_props[i]
+    
+    # Draw lines connecting the segments
+    cum_control = 0
+    cum_treatment = 0
+    for c_prop, t_prop in zip(control_props, treatment_props):
+        plt.plot(['Control', 'Treatment'], [cum_control + c_prop, cum_treatment + t_prop], 'k-', alpha=0.5)
+        cum_control += c_prop
+        cum_treatment += t_prop
+    
+    # Tufte-style aesthetics
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['left'].set_visible(False)
+    plt.gca().yaxis.set_ticks_position('none') 
+    plt.gca().xaxis.set_ticks_position('bottom') 
+    plt.yticks([])
+    plt.title('Proportions by Group and Category', fontsize=12)
+    plt.legend(bbox_to_anchor=(1.05, 0.95), loc='upper left', frameon=False)
+    plt.tight_layout()
+    plt.show()
