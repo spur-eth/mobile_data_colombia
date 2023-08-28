@@ -36,3 +36,14 @@ def calculate_visits_min_minutes(tdf, visit_durations, out_dir, stop_radius_fact
     pbar_write.close()
 
     return 
+
+def calc_group_poi_visits(visits_w_poi_df):
+    visits_w_named_pois = visits_w_poi_df.dropna(subset='name')
+    print(f'The number of total visits is {len(visits_w_poi_df)}, with {len(visits_w_named_pois)} POIs mapped.')
+    grouped_visits = visits_w_named_pois.groupby(['uid', 'datetime'])['name'].count()
+    visits_w_more_than_one_named_poi = grouped_visits[grouped_visits > 1]
+    print(f'The number of visits that map to at least one POI is {len(grouped_visits)}, and {len(visits_w_more_than_one_named_poi)} map to multiple POIs.')
+    per_visits_mult_name = (len(visits_w_more_than_one_named_poi)/len(grouped_visits))*100
+    print(f'The percentage of visits with more than one assigned POI is: {per_visits_mult_name}')
+    grouped_category_proportions = visits_w_named_pois.groupby(['Group'])['category'].value_counts(normalize=True).to_frame()
+    return visits_w_named_pois, visits_w_more_than_one_named_poi, grouped_category_proportions
