@@ -1,3 +1,16 @@
+# custom 
+data/
+figures/ # will also ignore many figures for now
+NOTES.md
+old_code/
+*.cpg
+*.dbf
+*.prj
+*.sbn
+*.sbx
+*.xml
+*.shx
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
