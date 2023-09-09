@@ -107,7 +107,7 @@ def from_month_write_filter_days_to_pq(data_folder: str, gdf, data_year: str, ye
         filepaths, day = get_files(data_folder, day_dirs[i])
         ddf_in_regions = filter_data_for_day(filepaths, gdf=gdf)
         day_name = day.split('/')[0]
-        filename = f"{year}_{month}_{day_name}.parquet"
+        filename = f"{year}_{month}_{day_name}"
         write_to_pq(df=ddf_in_regions.compute(), out_dir=out_dir, filename=filename)
     return
 
