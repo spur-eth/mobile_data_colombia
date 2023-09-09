@@ -111,6 +111,11 @@ def from_month_write_filter_days_to_pq(data_folder: str, gdf, data_year: str, ye
         write_to_pq(df=ddf_in_regions.compute(), out_dir=out_dir, filename=filename)
     return
 
+def compute_user_stats_from_pq(pq_dir):
+    table_dd = dd.read_parquet(pq_dir, columns=['uid', 'datetime'])
+    user_stats = mobilkit.stats.userStats(table_dd).compute()
+    return user_stats
+
 def get_df_for_sel_users(dataset, sel_users, cols):
     table = dataset.to_table(columns=cols, filter=ds.field('uid').isin(sel_users))
     df = table.to_pandas().reset_index()
