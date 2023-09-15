@@ -11,57 +11,16 @@ import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 from skmob import TrajDataFrame
 from skmob.measures.individual import home_location
+from mobilkit.stats import userStats
 
 from tqdm.notebook import tqdm
+from setup import Where, read_config, get_shp, get_config_vars
 
 #### VARIABLES FOR DATA LOADING AND PREPROCESSING ####
 # These are based on the data we have and would have to be modified if the format of the files changed/adapted for other data
-
-initial_cols = [
-    "device_id",
-    "id_type",
-    "latitude",
-    "longitude",
-    "horizontal_accuracy",
-    "timestamp",
-    "ip_address",
-    "device_os",
-    "country",
-    "unknown_2",
-    "geohash",
-]
-sel_cols = [
-    "device_id",
-    "latitude",
-    "longitude",
-    "timestamp",
-    "geohash",
-    "horizontal_accuracy",
-]
-final_cols = ["uid", "lat", "lng", "datetime", "geohash", "horizontal_accuracy"]
-
-datatypes = {
-    "device_id": "object",
-    "id_type": "object",
-    "latitude": "float64",
-    "longitude": "float64",
-    "horizontal_accuracy": "float32",
-    "timestamp": "int64",
-    "ip_address": "object",
-    "device_os": "object",
-    "country": "object",
-    "unknown_2": "int64",
-    "geohash": "object",
-}
-
-# boundary box that roughly captures the larger county of Bogota
-minlon = -74.453
-maxlon = -73.992
-minlat = 3.727
-maxlat = 4.835
+# Load config file to see them (initial_cols, sel_cols, final_cols, datatypes, boundary_box, etc)
 
 #### FUNCTIONS FOR DATA PREPROCESSING AND FILTERING ####
-
 
 def get_days(data_folder):
     """Assuming a directory organized as a month's worth of days with files in each directory like "day=01", etc"""
@@ -80,7 +39,7 @@ def get_files(data_folder, day_dir):
     return filepaths, day
 
 
-def load_data(filepaths, initial_cols, sel_cols, final_cols, datatypes=datatypes):
+def load_data(filepaths, initial_cols, sel_cols, final_cols, datatypes):
     """Load in the mobile data and specify the columns"""
     ddf = dd.read_csv(filepaths, dtype=datatypes, names=initial_cols)
     ddf = ddf[sel_cols]
@@ -113,8 +72,9 @@ def find_within_regions(ddf, gdf, lng_col="lng", lat_col="lat"):
     return ddf_in_regions
 
 
-def filter_data_for_day(filepaths, gdf):
-    ddf = load_data(filepaths, initial_cols, sel_cols, final_cols)
+def filter_data_for_day(filepaths, gdf, initial_cols, sel_cols, final_cols, datatypes, minlon, maxlon, minlat, maxlat):
+    """Load in the data for a day and filter it to the study area and regions of interest."""
+    ddf = load_data(filepaths, initial_cols, sel_cols, final_cols, datatypes)
     within_box_ddf = find_within_box(ddf, minlon, maxlon, minlat, maxlat)
     ddf_in_regions = find_within_regions(within_box_ddf, gdf=gdf)
     # cols must be in in the ddf/shapefile
@@ -168,22 +128,42 @@ def write_to_pq(df, out_dir, filename, write_subdir="", write_csv=False):
 
 
 def from_month_write_filter_days_to_pq(
-    data_folder: str, gdf, data_year: str, year: str, out_dir: str
+    data_folder: str, gdf, data_year: str, year: str, out_dir: str, 
+    initial_cols: list, sel_cols: list, final_cols: list, datatypes: dict,
+    minlon: float, maxlon: float, minlat: float, maxlat: float,
 ):
     month = data_folder.split(data_year)[1].split("/")[0]
     day_dirs = get_days(data_folder)
     for i in tqdm(range(0, len(day_dirs)), desc=f"Files from {year} {month} processed"):
         filepaths, day = get_files(data_folder, day_dirs[i])
-        ddf_in_regions = filter_data_for_day(filepaths, gdf=gdf)
+        ddf_in_regions = filter_data_for_day(filepaths, gdf, initial_cols, sel_cols, final_cols, datatypes, minlon, maxlon, minlat, maxlat)
         day_name = day.split("/")[0]
         filename = f"{year}_{month}_{day_name}"
         write_to_pq(df=ddf_in_regions.compute(), out_dir=out_dir, filename=filename)
     return
 
+def write_data_in_study_area(where: Where, config_path: str):
+    print(config_path)
+    c = read_config(path=config_path)
+    shapefile, gdf_regions = get_shp(meta_dir=where.meta_dir, 
+                                 shp_name=c['meta']['shp']['study_area'], 
+                                 load = True)
+    (year, datatypes, initial_cols, sel_cols, final_cols, 
+    minlon, maxlon, minlat, maxlat) = get_config_vars(c=c, mode='preprocess')
+    for i in range(0, len(where.data_folders)):
+        data_folder = where.data_folders[i]
+        from_month_write_filter_days_to_pq(data_folder, 
+                                           gdf=gdf_regions, 
+                                           out_dir=where.study_area_dir, 
+                                           data_year=where.data_year, 
+                                           year=year, 
+                                           initial_cols=initial_cols, sel_cols=sel_cols, 
+                                           final_cols=final_cols, datatypes=datatypes,
+                                           minlon=minlon, maxlon=maxlon, minlat=minlat, maxlat=maxlat)
 
 def compute_user_stats_from_pq(pq_dir):
     table_dd = dd.read_parquet(pq_dir, columns=["uid", "datetime"])
-    user_stats = mobilkit.stats.userStats(table_dd).compute()
+    user_stats = userStats(table_dd).compute()
     return user_stats
 
 
