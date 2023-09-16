@@ -1,8 +1,9 @@
 # custom 
 data/
-figures/ # will also ignore many figures for now
+out/
+figures/old_figures/ # will also ignore many figures for now
 NOTES.md
-old_code/
+code/old_code/
 *.cpg
 *.dbf
 *.prj
