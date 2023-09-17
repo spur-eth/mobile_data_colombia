@@ -1,5 +1,6 @@
 from geopy.distance import geodesic
 from skmob.preprocessing import detection
+from preprocess import write_to_pq
 
 from tqdm.notebook import tqdm
 
