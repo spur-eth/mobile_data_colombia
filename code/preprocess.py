@@ -64,7 +64,7 @@ def find_within_box(ddf: dd.DataFrame, minlon: float, maxlon: float, minlat: flo
     return filtered_ddf
 
 
-def find_within_regions(ddf: dd.DataFrame, gdf: gpd.DataFrame, lng_col: str="lng", lat_col: str="lat"):
+def find_within_regions(ddf: dd.DataFrame, gdf: gpd.GeoDataFrame, lng_col: str="lng", lat_col: str="lat"):
     ddf = ddgpd.from_dask_dataframe(
         ddf, geometry=ddgpd.points_from_xy(ddf, lng_col, lat_col)
     )
@@ -73,7 +73,7 @@ def find_within_regions(ddf: dd.DataFrame, gdf: gpd.DataFrame, lng_col: str="lng
     return ddf_in_regions
 
 
-def filter_data_for_day(filepaths, gdf: gpd.DataFrame, 
+def filter_data_for_day(filepaths, gdf: gpd.GeoDataFrame, 
                         initial_cols: list, sel_cols: list, final_cols: list, datatypes: dict, 
                         minlon: float, maxlon: float, minlat: float, maxlat: float):
     """Load in the data for a day and filter it to the study area and regions of interest."""
@@ -186,7 +186,7 @@ def find_goal_lat_lng(df, start_night: str="22:00", end_night: str="06:00"):
 
 
 def assign_points_to_regions(
-    points_df, regions_gdf: gpd.DataFrame, cols_to_keep: list, point_lat_col: str="lat", point_lng_col: str="lng"
+    points_df, regions_gdf: gpd.GeoDataFrame, cols_to_keep: list, point_lat_col: str="lat", point_lng_col: str="lng"
 ):
     geometry = gpd.points_from_xy(points_df[point_lng_col], points_df[point_lat_col])
     points_gdf = gpd.GeoDataFrame(points_df, geometry=geometry, crs=regions_gdf.crs)
@@ -200,7 +200,7 @@ def compute_goal_lat_lngs_for_users(
     uids_pass_qc: list,
     pq_dir: str,
     out_dir: str,
-    regions_gdf: gpd.DataFrame,
+    regions_gdf: gpd.GeoDataFrame,
     num_users: int=20000,
     cols: list=["uid", "datetime", "lat", "lng"],
     gdf_cols: list=["Area", "MUNCod", "NOMMun", "ZAT", "UTAM", "stratum"],
