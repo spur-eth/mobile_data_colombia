@@ -2,6 +2,7 @@ import yaml
 from pathlib import Path
 import glob
 from dataclasses import dataclass
+import pandas as pd
 import geopandas as gpd
 
 @dataclass
@@ -38,6 +39,12 @@ def get_config_vars(c: dict, mode='preprocess'):
         min_days=c['filter']['qc']['min_days']
         min_pings=c['filter']['qc']['min_pings']
         return min_days, min_pings
+    elif mode == 'user_locs':
+        start_time_home = c['user_locs']['home']['start_time']
+        end_time_home = c['user_locs']['home']['end_time']
+        start_time_work = c['user_locs']['work']['start_time']
+        end_time_work = c['user_locs']['work']['end_time']
+        return start_time_home, end_time_home, start_time_work, end_time_work
     else: 
         print(mode, 'mode not implemented yet')   
 
@@ -68,3 +75,25 @@ def get_shp(meta_dir: str, shp_name: str, load: bool = False):
         gdf_regions.plot()
         return shapefile, gdf_regions
     return shapefile
+
+def get_shp_to_assign_poi(shp_dir: str, config: dict, radius:int=15, plot: bool=False): 
+    shp_name= config['meta']['shp']['visits'][f'{radius}m']
+    shapefile = f'{shp_dir}{shp_name}.shp'
+    regions_gdf = gpd.read_file(shapefile)
+    if plot: 
+        regions_gdf.plot(column='category')
+    return shp_name, regions_gdf
+
+def adapt_ZATs_file(meta_dir:str, 
+                    in_filename: str='ZAT_treat_control.csv', 
+                    out_filename: str='ZAT_selected_txt_control.csv'):
+    in_fp = f'{meta_dir}{in_filename}'
+    out_fp=f'{meta_dir}{out_filename}'
+    zats_tc = pd.read_csv(in_fp).astype('float64') 
+    ztreat = [i for i in list(zats_tc['ZATs Treatment group']) if str(i) != "nan"] 
+    zcontrol = [i for i in list(zats_tc['ZAT Control group']) if str(i) != "nan"] 
+    ztreat_df = pd.DataFrame({'Group': 'Treatment', 'ZATs': ztreat})
+    zcontrol_df = pd.DataFrame({'Group': 'Control', 'ZATs': zcontrol})
+    zat_treat_control_df = pd.concat([ztreat_df, zcontrol_df])
+    zat_treat_control_df.to_csv(out_fp, index=False)
+    return zat_treat_control_df 
