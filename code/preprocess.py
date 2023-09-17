@@ -15,6 +15,7 @@ from mobilkit.stats import userStats
 
 from tqdm.notebook import tqdm
 from setup import Where, read_config, get_shp, get_config_vars
+from typing import Optional
 
 #### VARIABLES FOR DATA LOADING AND PREPROCESSING ####
 # These are based on the data we have and would have to be modified if the format of the files changed/adapted for other data
@@ -22,13 +23,13 @@ from setup import Where, read_config, get_shp, get_config_vars
 
 #### FUNCTIONS FOR DATA PREPROCESSING AND FILTERING ####
 
-def get_days(data_folder):
+def get_days(data_folder: str):
     """Assuming a directory organized as a month's worth of days with files in each directory like "day=01", etc"""
     day_dirs = glob.glob((data_folder + "*/"))
     return day_dirs
 
 
-def get_files(data_folder, day_dir):
+def get_files(data_folder: str, day_dir: str):
     """Assuming a dir corresponding to and named for a day day_dir, (e.g. "day=01") within the data_folder with that day's mobile data files."""
     day = day_dir.split(data_folder)[1]
     filepaths = [
@@ -39,7 +40,7 @@ def get_files(data_folder, day_dir):
     return filepaths, day
 
 
-def load_data(filepaths, initial_cols, sel_cols, final_cols, datatypes):
+def load_data(filepaths, initial_cols: list, sel_cols: list, final_cols: list, datatypes: dict):
     """Load in the mobile data and specify the columns"""
     ddf = dd.read_csv(filepaths, dtype=datatypes, names=initial_cols)
     ddf = ddf[sel_cols]
@@ -56,14 +57,14 @@ def convert_datetime(ddf: dd.DataFrame):  # needs work
     return ddf
 
 
-def find_within_box(ddf, minlon, maxlon, minlat, maxlat):
+def find_within_box(ddf: dd.DataFrame, minlon: float, maxlon: float, minlat: float, maxlat: float):
     """Quick way to filter out points not in a particular rectangular region."""
     box = [minlon, minlat, maxlon, maxlat]
     filtered_ddf = mk_crop_spatial(ddf, box).reset_index()
     return filtered_ddf
 
 
-def find_within_regions(ddf, gdf, lng_col="lng", lat_col="lat"):
+def find_within_regions(ddf: dd.DataFrame, gdf: gpd.DataFrame, lng_col: str="lng", lat_col: str="lat"):
     ddf = ddgpd.from_dask_dataframe(
         ddf, geometry=ddgpd.points_from_xy(ddf, lng_col, lat_col)
     )
@@ -72,7 +73,9 @@ def find_within_regions(ddf, gdf, lng_col="lng", lat_col="lat"):
     return ddf_in_regions
 
 
-def filter_data_for_day(filepaths, gdf, initial_cols, sel_cols, final_cols, datatypes, minlon, maxlon, minlat, maxlat):
+def filter_data_for_day(filepaths, gdf: gpd.DataFrame, 
+                        initial_cols: list, sel_cols: list, final_cols: list, datatypes: dict, 
+                        minlon: float, maxlon: float, minlat: float, maxlat: float):
     """Load in the data for a day and filter it to the study area and regions of interest."""
     ddf = load_data(filepaths, initial_cols, sel_cols, final_cols, datatypes)
     within_box_ddf = find_within_box(ddf, minlon, maxlon, minlat, maxlat)
@@ -106,13 +109,13 @@ def filter_data_for_day(filepaths, gdf, initial_cols, sel_cols, final_cols, data
     return ddf_in_regions
 
 
-def write_day(ddf_in_regions, out_dir, year, month, day):
+def write_day(ddf_in_regions: dd.DataFrame, out_dir: str, year, month, day):
     filename = f"{out_dir}{year}_{month}_{day}.parquet"
     ddf_in_regions.to_parquet(path=filename, write_index=False)
     return
 
 
-def write_to_pq(df, out_dir, filename, write_subdir="", write_csv=False):
+def write_to_pq(df, out_dir: str, filename: str, write_subdir="", write_csv=False):
     if len(write_subdir) > 0:
         out_dir = f"{out_dir}{write_subdir}/"
         try:
@@ -161,20 +164,20 @@ def write_data_in_study_area(where: Where, config_path: str):
                                            final_cols=final_cols, datatypes=datatypes,
                                            minlon=minlon, maxlon=maxlon, minlat=minlat, maxlat=maxlat)
 
-def compute_user_stats_from_pq(pq_dir):
+def compute_user_stats_from_pq(pq_dir: str):
     table_dd = dd.read_parquet(pq_dir, columns=["uid", "datetime"])
     user_stats = userStats(table_dd).compute()
     return user_stats
 
 
-def get_df_for_sel_users(dataset, sel_users, cols):
+def get_df_for_sel_users(dataset, sel_users: list, cols: list):
     table = dataset.to_table(columns=cols, filter=ds.field("uid").isin(sel_users))
     df = table.to_pandas().reset_index()
     df = df.drop(["index"], axis=1)
     return df
 
 
-def find_home_lat_lng(df, start_night="22:00", end_night="06:00"):
+def find_goal_lat_lng(df, start_night: str="22:00", end_night: str="06:00"):
     traj_df = TrajDataFrame(
         df, user_id="uid", latitude="lat", longitude="lng", datetime="datetime"
     )
@@ -183,7 +186,7 @@ def find_home_lat_lng(df, start_night="22:00", end_night="06:00"):
 
 
 def assign_points_to_regions(
-    points_df, regions_gdf, cols_to_keep, point_lat_col="lat", point_lng_col="lng"
+    points_df, regions_gdf: gpd.DataFrame, cols_to_keep: list, point_lat_col: str="lat", point_lng_col: str="lng"
 ):
     geometry = gpd.points_from_xy(points_df[point_lng_col], points_df[point_lat_col])
     points_gdf = gpd.GeoDataFrame(points_df, geometry=geometry, crs=regions_gdf.crs)
@@ -193,17 +196,17 @@ def assign_points_to_regions(
     return joined_gdf
 
 
-def compute_home_lat_lngs_for_users(
-    uids_pass_qc,
-    pq_dir,
-    out_dir,
-    regions_gdf,
-    num_users=20000,
-    cols=["uid", "datetime", "lat", "lng"],
-    gdf_cols=["Area", "MUNCod", "NOMMun", "ZAT", "UTAM", "stratum"],
-    start_time="22:00",
-    end_time="06:00",
-    goal="home",
+def compute_goal_lat_lngs_for_users(
+    uids_pass_qc: list,
+    pq_dir: str,
+    out_dir: str,
+    regions_gdf: gpd.DataFrame,
+    num_users: int=20000,
+    cols: list=["uid", "datetime", "lat", "lng"],
+    gdf_cols: list=["Area", "MUNCod", "NOMMun", "ZAT", "UTAM", "stratum"],
+    start_time: str="22:00",
+    end_time: str="06:00",
+    goal: str="home",
 ):
     pings_paths = glob.glob((pq_dir + "*.parquet"))
     dataset = ds.dataset(pings_paths, format="parquet")
@@ -226,7 +229,7 @@ def compute_home_lat_lngs_for_users(
         pbar_process.set_description(
             f"Computing {goal} location user data from users {user_count} to {user_count_updated}"
         )
-        hl_df = find_home_lat_lng(df, start_night=start_time, end_night=end_time)
+        hl_df = find_goal_lat_lng(df, start_night=start_time, end_night=end_time)
         pbar_process.update(1)
         joined_df = assign_points_to_regions(
             points_df=hl_df,
@@ -249,7 +252,7 @@ def compute_home_lat_lngs_for_users(
     return
 
 
-def read_visits(visits_fp, uid_treat_group_info=None):
+def read_visits(visits_fp: str, uid_treat_group_info=None):
     # note the optional uid_treat_group_info needs to be a pandas df with 'uid', 'ZAT_home', 'Group' columns
     visit_df = pd.read_csv(visits_fp)
     visit_df = visit_df.rename(columns={"lat": "lat_visit", "lng": "lng_visit"})
@@ -263,12 +266,12 @@ def read_visits(visits_fp, uid_treat_group_info=None):
 def calc_write_visit_pois(
     visit_df,
     regions_gdf,
-    cols_to_keep,
-    out_dir,
-    subdir_name,
-    outfilename,
-    point_lat_col="lat_visit",
-    point_lng_col="lng_visit",
+    cols_to_keep: list,
+    out_dir: str,
+    subdir_name: str,
+    outfilename: str,
+    point_lat_col: str="lat_visit",
+    point_lng_col: str="lng_visit",
 ):
     visits_w_poi_df = assign_points_to_regions(
         points_df=visit_df,
