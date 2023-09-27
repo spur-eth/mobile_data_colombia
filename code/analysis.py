@@ -1,9 +1,11 @@
-from geopy.distance import geodesic
-from skmob.preprocessing import detection, TrajectoryDataFrame
-import pandas as pd
-from preprocess import write_to_pq
 from typing import List, Tuple
+
+import pandas as pd
+from geopy.distance import geodesic
+from skmob.preprocessing import TrajectoryDataFrame, detection
 from tqdm.notebook import tqdm
+
+from preprocess import write_to_pq
 
 
 def geodesic_distance(row: pd.DataFrame) -> float:

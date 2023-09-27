@@ -1,21 +1,22 @@
 import glob
-import os
 import math
-import pandas as pd
+import os
+from typing import Optional
+
 import dask.dataframe as dd
-import geopandas as gpd
 import dask_geopandas as ddgpd
-from mobilkit.loader import crop_spatial as mk_crop_spatial
+import geopandas as gpd
+import pandas as pd
 import pyarrow as pa
-import pyarrow.parquet as pq
 import pyarrow.dataset as ds
+import pyarrow.parquet as pq
+from mobilkit.loader import crop_spatial as mk_crop_spatial
+from mobilkit.stats import userStats
 from skmob import TrajDataFrame
 from skmob.measures.individual import home_location
-from mobilkit.stats import userStats
-
 from tqdm.notebook import tqdm
-from setup import Where, read_config, get_shp, get_config_vars
-from typing import Optional
+
+from setup import Where, get_config_vars, get_shp, read_config
 
 #### VARIABLES FOR DATA LOADING AND PREPROCESSING ####
 # These are based on the data we have and would have to be modified if the format of the files changed/adapted for other data

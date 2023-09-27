@@ -15,4 +15,9 @@ ipykernel
 unidecode
 plotly
 python-dotenv
-sqlite
+folium
+dask-geopandas
+tqdm
+scikit-mobility
+# Development dependencies
+isort

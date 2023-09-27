@@ -1,13 +1,14 @@
 import os
 
 os.environ["USE_PYGEOS"] = "0"
-import geopandas as gpd
-import numpy as np
-import pandas as pd
+from typing import List, Tuple, Union
+
 import dask.dataframe as dd
 import folium as folium
+import geopandas as gpd
 import matplotlib.pyplot as plt
-from typing import Tuple, Union, List
+import numpy as np
+import pandas as pd
 
 
 def plot_frac_data_on_map(
