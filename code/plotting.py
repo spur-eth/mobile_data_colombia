@@ -9,6 +9,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 
 def plot_frac_data_on_map(
@@ -239,4 +240,31 @@ def plot_stacked_bar_from_csv(
     plt.legend(bbox_to_anchor=(1.05, 0.95), loc="upper left", frameon=False)
     plt.tight_layout()
     plt.savefig(f"{out_file}.pdf", dpi=200, bbox_inches="tight")
+    plt.show()
+
+def plot_visits_bar(data: pd.DataFrame, x: str, y: str, hue: str, plot_dir: str, title: str, 
+                    palette: List[Tuple[float, float, float]] = sns.color_palette("Paired"), 
+                    figsize: Tuple[int, int] = (10, 6)) -> None:
+    """Creates a bar plot for visits data.
+
+    Args:
+        data (DataFrame): The DataFrame containing the data to be plotted.
+        x: The name of the column in 'data' to be used for the x-axis.
+        y: The name of the column in 'data' to be used for the y-axis.
+        hue: The name of the column in 'data' that defines groups for coloring bars.
+        plot_dir: The directory where the plot image will be saved.
+        title: The title of the plot.
+        palette: A list of RGB tuples. Each tuple consists of three floats representing a color.
+        figsize: The width and height of the plot in inches.
+    """
+    sns.set_style("whitegrid", {'axes.grid': False})
+    plt.figure(figsize=figsize)
+    ax = sns.barplot(data=data, 
+                    x=x, y=y, hue=hue, palette=palette)
+
+    plt.title(label=title, fontsize=12)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.legend(loc='upper left', bbox_to_anchor=(1, 1), frameon=False)
+    plt.savefig(f'{plot_dir}{title}.png', dpi=200, bbox_inches='tight')
     plt.show()
