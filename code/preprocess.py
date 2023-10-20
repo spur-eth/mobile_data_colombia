@@ -599,3 +599,24 @@ def calc_write_visit_pois(
     )
     print(f"Wrote data to {outfilename}")
     return visits_w_poi_df
+
+
+def filter_users_by_minimum_visits(visit_df: pd.DataFrame, visit_threshold: int) -> pd.DataFrame:
+    """Filters users in the visit DataFrame who have a minimum number of visits.
+
+    Args:
+        visit_df: A DataFrame containing user visit data, expected to have at least 'uid' and 'datetime' columns.
+        visit_threshold: The minimum number of visits required for a user to remain in the returned DataFrame.
+
+    Returns:
+        A new DataFrame containing only rows of users who have at least 'visit_threshold' visits.
+
+    """
+    num_users = visit_df['uid'].nunique()
+    visit_counts_per_uid = visit_df.groupby('uid')['datetime'].count()
+    uids_w_enough_visits = list(visit_counts_per_uid[visit_counts_per_uid >= visit_threshold].index)
+    visit_df = visit_df[visit_df['uid'].isin(uids_w_enough_visits)]
+    num_users_filtered = visit_df['uid'].nunique()
+    print(f'Visits from {num_users_filtered} of {num_users} users had at least {visit_threshold} visits.')
+    return visit_df
+
