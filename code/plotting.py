@@ -242,9 +242,17 @@ def plot_stacked_bar_from_csv(
     plt.savefig(f"{out_file}.pdf", dpi=200, bbox_inches="tight")
     plt.show()
 
-def plot_visits_bar(data: pd.DataFrame, x: str, y: str, hue: str, plot_dir: str, title: str, 
-                    palette: List[Tuple[float, float, float]] = sns.color_palette("Paired"), 
-                    figsize: Tuple[int, int] = (10, 6)) -> None:
+
+def plot_visits_bar(
+    data: pd.DataFrame,
+    x: str,
+    y: str,
+    hue: str,
+    plot_dir: str,
+    title: str,
+    palette: List[Tuple[float, float, float]] = sns.color_palette("Paired"),
+    figsize: Tuple[int, int] = (10, 6),
+) -> None:
     """Creates a bar plot for visits data.
 
     Args:
@@ -257,14 +265,13 @@ def plot_visits_bar(data: pd.DataFrame, x: str, y: str, hue: str, plot_dir: str,
         palette: A list of RGB tuples. Each tuple consists of three floats representing a color.
         figsize: The width and height of the plot in inches.
     """
-    sns.set_style("whitegrid", {'axes.grid': False})
+    sns.set_style("whitegrid", {"axes.grid": False})
     plt.figure(figsize=figsize)
-    ax = sns.barplot(data=data, 
-                    x=x, y=y, hue=hue, palette=palette)
+    ax = sns.barplot(data=data, x=x, y=y, hue=hue, palette=palette)
 
     plt.title(label=title, fontsize=12)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.legend(loc='upper left', bbox_to_anchor=(1, 1), frameon=False)
-    plt.savefig(f'{plot_dir}{title}.png', dpi=200, bbox_inches='tight')
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.legend(loc="upper left", bbox_to_anchor=(1, 1), frameon=False)
+    plt.savefig(f"{plot_dir}{title}.png", dpi=200, bbox_inches="tight")
     plt.show()

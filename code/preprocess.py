@@ -12,11 +12,10 @@ import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from mobilkit.loader import crop_spatial as mk_crop_spatial
 from mobilkit.stats import userStats
+from setup import Where, get_config_vars, get_shp, read_config
 from skmob import TrajDataFrame
 from skmob.measures.individual import home_location
 from tqdm.notebook import tqdm
-
-from setup import Where, get_config_vars, get_shp, read_config
 
 #### VARIABLES FOR DATA LOADING AND PREPROCESSING ####
 # These are based on the data we have and would have to be modified if the format of the files changed/adapted for other data
@@ -360,9 +359,15 @@ def compute_user_stats_from_pq(pq_dir: str) -> pd.DataFrame:
     return user_stats
 
 
-def write_filter_user_stats(user_stats: pd.DataFrame, output_dir: str, year: str, filter_by_frequency: bool=False, 
-                     min_pings: int=60, min_days: int=10):
-    """Writes and optionally filters user statistics, then saves them to a CSV file. Shows the number of users 
+def write_filter_user_stats(
+    user_stats: pd.DataFrame,
+    output_dir: str,
+    year: str,
+    filter_by_frequency: bool = False,
+    min_pings: int = 60,
+    min_days: int = 10,
+):
+    """Writes and optionally filters user statistics, then saves them to a CSV file. Shows the number of users
     in the dataset and, if filtering is applied, shows the number of users remaining after filtering.
 
     Args:
@@ -380,13 +385,17 @@ def write_filter_user_stats(user_stats: pd.DataFrame, output_dir: str, year: str
     print(f"There are {len(user_stats)} users in this dataset.")
 
     if filter_by_frequency:
-        output_filepath = f'{output_dir}user_stats_{year}_minpings{min_pings}_mindays{min_days}_shp_filtered.csv'
-        user_stats = user_stats[(user_stats['pings'] >= min_pings) & (user_stats['daysActive'] >= min_days)]
-        print(f"Based on {min_pings} ping and {min_days} day mininum cutoffs, kept {len(user_stats)} users. ({len(user_stats)/num_og_users*100:.2f}%)")
-    else: 
-        output_filepath = f'{output_dir}user_stats_{year}_allpings_shp_filtered.csv'
-        print(f'Kept all {len(user_stats)} users.')
-        
+        output_filepath = f"{output_dir}user_stats_{year}_minpings{min_pings}_mindays{min_days}_shp_filtered.csv"
+        user_stats = user_stats[
+            (user_stats["pings"] >= min_pings) & (user_stats["daysActive"] >= min_days)
+        ]
+        print(
+            f"Based on {min_pings} ping and {min_days} day mininum cutoffs, kept {len(user_stats)} users. ({len(user_stats)/num_og_users*100:.2f}%)"
+        )
+    else:
+        output_filepath = f"{output_dir}user_stats_{year}_allpings_shp_filtered.csv"
+        print(f"Kept all {len(user_stats)} users.")
+
     user_stats.to_csv(output_filepath, index=False)
 
     return user_stats
@@ -601,7 +610,9 @@ def calc_write_visit_pois(
     return visits_w_poi_df
 
 
-def filter_users_by_minimum_visits(visit_df: pd.DataFrame, visit_threshold: int) -> pd.DataFrame:
+def filter_users_by_minimum_visits(
+    visit_df: pd.DataFrame, visit_threshold: int
+) -> pd.DataFrame:
     """Filters users in the visit DataFrame who have a minimum number of visits.
 
     Args:
@@ -612,11 +623,14 @@ def filter_users_by_minimum_visits(visit_df: pd.DataFrame, visit_threshold: int)
         A new DataFrame containing only rows of users who have at least 'visit_threshold' visits.
 
     """
-    num_users = visit_df['uid'].nunique()
-    visit_counts_per_uid = visit_df.groupby('uid')['datetime'].count()
-    uids_w_enough_visits = list(visit_counts_per_uid[visit_counts_per_uid >= visit_threshold].index)
-    visit_df = visit_df[visit_df['uid'].isin(uids_w_enough_visits)]
-    num_users_filtered = visit_df['uid'].nunique()
-    print(f'Visits from {num_users_filtered} of {num_users} users had at least {visit_threshold} visits.')
+    num_users = visit_df["uid"].nunique()
+    visit_counts_per_uid = visit_df.groupby("uid")["datetime"].count()
+    uids_w_enough_visits = list(
+        visit_counts_per_uid[visit_counts_per_uid >= visit_threshold].index
+    )
+    visit_df = visit_df[visit_df["uid"].isin(uids_w_enough_visits)]
+    num_users_filtered = visit_df["uid"].nunique()
+    print(
+        f"Visits from {num_users_filtered} of {num_users} users had at least {visit_threshold} visits."
+    )
     return visit_df
-

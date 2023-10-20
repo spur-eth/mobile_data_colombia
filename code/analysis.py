@@ -2,11 +2,10 @@ from typing import List, Tuple
 
 import pandas as pd
 from geopy.distance import geodesic
+from preprocess import write_to_pq
 from skmob.core.trajectorydataframe import TrajDataFrame
 from skmob.preprocessing import detection
 from tqdm.notebook import tqdm
-
-from preprocess import write_to_pq
 
 
 def geodesic_distance(row: pd.DataFrame) -> float:
@@ -115,11 +114,17 @@ def calc_group_poi_visits(
         grouped_category_proportions,
     )
 
-def count_visits_by_month(visit_df: pd.DataFrame, cols: List[str], as_proportion: bool=False, 
-                          normalize: bool=False, dt_col: str='datetime') -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+def count_visits_by_month(
+    visit_df: pd.DataFrame,
+    cols: List[str],
+    as_proportion: bool = False,
+    normalize: bool = False,
+    dt_col: str = "datetime",
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Counts and possibly normalizes the visits by month, and can calculate them as proportions. This function 
-    adds month information to the 'visit_df', groups the data by month and optionally normalizes the visit counts 
+    Counts and possibly normalizes the visits by month, and can calculate them as proportions. This function
+    adds month information to the 'visit_df', groups the data by month and optionally normalizes the visit counts
     or calculates them as proportions.
 
     Args:
@@ -130,22 +135,43 @@ def count_visits_by_month(visit_df: pd.DataFrame, cols: List[str], as_proportion
         dt_col: Name of the column in visit_df that contains datetime information.
 
     Returns:
-        A tuple containing two DataFrames: the first one is the modified visit_df with added month information, 
+        A tuple containing two DataFrames: the first one is the modified visit_df with added month information,
         and the second one is the grouped DataFrame with counts or proportions of visits per month.
     """
     visits_to_plot = visit_df.reset_index()[cols]
-    print(f'The total number of visits considered is {len(visits_to_plot)}')
-    visits_to_plot["datetime"] = pd.to_datetime(visits_to_plot["datetime"], format='mixed', dayfirst=True)
-    visits_to_plot['month_name'] = visits_to_plot["datetime"].dt.month_name()
-    visits_to_plot['month'] = visits_to_plot["datetime"].dt.month
-    if as_proportion == False: 
-        visits_grouped = visits_to_plot.groupby('month')['Group'].value_counts(dropna=False).to_frame().reset_index()
-    else: 
-        visits_grouped = visits_to_plot.groupby('month')['Group'].value_counts(dropna=False, normalize=True).to_frame().reset_index()
-        visits_grouped['percentage'] = round(visits_grouped['proportion']*100, 2)
-    if normalize == True: 
-        num_users_per_month = visits_to_plot.groupby(['month', 'Group'])['uid'].nunique().to_frame().reset_index()
-        normalized_visits_grouped = num_users_per_month.merge(visits_grouped['count'], left_index=True, right_index=True)
-        normalized_visits_grouped['count_normalized_nusers'] = normalized_visits_grouped['count']/normalized_visits_grouped['uid']
-        visits_grouped = normalized_visits_grouped 
+    print(f"The total number of visits considered is {len(visits_to_plot)}")
+    visits_to_plot["datetime"] = pd.to_datetime(
+        visits_to_plot["datetime"], format="mixed", dayfirst=True
+    )
+    visits_to_plot["month_name"] = visits_to_plot["datetime"].dt.month_name()
+    visits_to_plot["month"] = visits_to_plot["datetime"].dt.month
+    if as_proportion == False:
+        visits_grouped = (
+            visits_to_plot.groupby("month")["Group"]
+            .value_counts(dropna=False)
+            .to_frame()
+            .reset_index()
+        )
+    else:
+        visits_grouped = (
+            visits_to_plot.groupby("month")["Group"]
+            .value_counts(dropna=False, normalize=True)
+            .to_frame()
+            .reset_index()
+        )
+        visits_grouped["percentage"] = round(visits_grouped["proportion"] * 100, 2)
+    if normalize == True:
+        num_users_per_month = (
+            visits_to_plot.groupby(["month", "Group"])["uid"]
+            .nunique()
+            .to_frame()
+            .reset_index()
+        )
+        normalized_visits_grouped = num_users_per_month.merge(
+            visits_grouped["count"], left_index=True, right_index=True
+        )
+        normalized_visits_grouped["count_normalized_nusers"] = (
+            normalized_visits_grouped["count"] / normalized_visits_grouped["uid"]
+        )
+        visits_grouped = normalized_visits_grouped
     return visits_to_plot, visits_grouped
