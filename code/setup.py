@@ -17,6 +17,7 @@ class Where:
     study_area_dir: str
     pass_qc_dir: str
     plot_dir: str
+    user_stats_dir: str
     data_folders: List[str]
 
 
@@ -116,6 +117,7 @@ def get_dirs(
     out_dir = f"{working_dir}out/{year}/"
     study_area_dir = f"{out_dir}in_study_area/"
     pass_qc_dir = f"{out_dir}pass_qc_{min_days}days_{min_pings}pings/"
+    user_stats_dir = f"{out_dir}user_stats/"
     plot_dir = f"{out_dir}figures/"
     for folder in [
         data_dir,
@@ -124,6 +126,7 @@ def get_dirs(
         out_dir,
         study_area_dir,
         pass_qc_dir,
+        user_stats_dir,
         plot_dir,
     ]:
         ensure_directory_exists(folder)
@@ -138,6 +141,7 @@ def get_dirs(
         study_area_dir,
         pass_qc_dir,
         plot_dir,
+        user_stats_dir,
         data_folders,
     )
     return where
