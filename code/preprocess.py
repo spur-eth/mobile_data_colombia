@@ -360,6 +360,38 @@ def compute_user_stats_from_pq(pq_dir: str) -> pd.DataFrame:
     return user_stats
 
 
+def write_filter_user_stats(user_stats: pd.DataFrame, output_dir: str, year: str, filter_by_frequency: bool=False, 
+                     min_pings: int=60, min_days: int=10):
+    """Writes and optionally filters user statistics, then saves them to a CSV file. Shows the number of users 
+    in the dataset and, if filtering is applied, shows the number of users remaining after filtering.
+
+    Args:
+        user_stats: DataFrame containing user statistics.
+        output_dir: Directory where the output CSV file will be saved.
+        year: Year for which the statistics are calculated, used in the output file naming.
+        filter_by_frequency: If True, filters users based on ping frequency and active days.
+        min_pings: The minimum number of pings required for a user to be included in the filtered data.
+        min_days: The minimum number of active days required for a user to be included in the filtered data.
+
+    Returns:
+        The DataFrame of user statistics, possibly filtered.
+    """
+    num_og_users = len(user_stats)
+    print(f"There are {len(user_stats)} users in this dataset.")
+
+    if filter_by_frequency:
+        output_filepath = f'{output_dir}user_stats_{year}_minpings{min_pings}_mindays{min_days}_shp_filtered.csv'
+        user_stats = user_stats[(user_stats['pings'] >= min_pings) & (user_stats['daysActive'] >= min_days)]
+        print(f"Based on {min_pings} ping and {min_days} day mininum cutoffs, kept {len(user_stats)} users. ({len(user_stats)/num_og_users*100:.2f}%)")
+    else: 
+        output_filepath = f'{output_dir}user_stats_{year}_allpings_shp_filtered.csv'
+        print(f'Kept all {len(user_stats)} users.')
+        
+    user_stats.to_csv(output_filepath, index=False)
+
+    return user_stats
+
+
 def get_df_for_sel_users(
     dataset: ds.dataset, sel_users: list, cols: list
 ) -> pd.DataFrame:
