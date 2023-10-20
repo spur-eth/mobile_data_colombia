@@ -21,4 +21,4 @@ tqdm
 scikit-mobility
 # Development dependencies
 isort
-black
+black #also black[jupyter] for notebooks
