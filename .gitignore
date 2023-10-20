@@ -1,7 +1,8 @@
 # custom 
 data/
 out/
-figures/old_figures/ # will also ignore many figures for now
+previous_figures/
+figures/ # will also ignore many figures for now and just select which to upload later
 NOTES.md
 code/old_code/
 *.cpg
