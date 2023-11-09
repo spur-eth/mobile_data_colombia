@@ -6,6 +6,7 @@ run:
   results_dir: "./out/results/"
   models_dir: "./out/models/"
   logs_dir: "./out/logs/"
+  user_stats_dir_both_years: "./out/all_years/user_stats/"
 
 data: 
   dataset_name: "year=2018"
