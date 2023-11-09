@@ -115,12 +115,13 @@ def calc_group_poi_visits(
     )
 
 
-def count_visits_by_month(
+def count_visits_over_time(
     visit_df: pd.DataFrame,
     cols: List[str],
     as_proportion: bool = False,
     normalize: bool = False,
     dt_col: str = "datetime",
+    time_unit: str = "month",  # can also be "dayofyear"
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Counts and possibly normalizes the visits by month, and can calculate them as proportions. This function
@@ -140,21 +141,27 @@ def count_visits_by_month(
     """
     visits_to_plot = visit_df.reset_index()[cols]
     print(f"The total number of visits considered is {len(visits_to_plot)}")
-    visits_to_plot["datetime"] = pd.to_datetime(
-        visits_to_plot["datetime"], format="mixed", dayfirst=True
+    visits_to_plot[dt_col] = pd.to_datetime(
+        visits_to_plot[dt_col], format="mixed", dayfirst=True
     )
-    visits_to_plot["month_name"] = visits_to_plot["datetime"].dt.month_name()
-    visits_to_plot["month"] = visits_to_plot["datetime"].dt.month
+    if time_unit == "month":
+        visits_to_plot["month_name"] = visits_to_plot[dt_col].dt.month_name()
+        visits_to_plot["month"] = visits_to_plot[dt_col].dt.month
+    elif time_unit == "dayofyear":
+        visits_to_plot["dayofyear"] = visits_to_plot[dt_col].dt.dayofyear
+    else:
+        raise ValueError("time_unit must be either 'month' or 'dayofyear'")
+
     if as_proportion == False:
         visits_grouped = (
-            visits_to_plot.groupby("month")["Group"]
+            visits_to_plot.groupby(time_unit)["Group"]
             .value_counts(dropna=False)
             .to_frame()
             .reset_index()
         )
     else:
         visits_grouped = (
-            visits_to_plot.groupby("month")["Group"]
+            visits_to_plot.groupby(time_unit)["Group"]
             .value_counts(dropna=False, normalize=True)
             .to_frame()
             .reset_index()
@@ -162,7 +169,7 @@ def count_visits_by_month(
         visits_grouped["percentage"] = round(visits_grouped["proportion"] * 100, 2)
     if normalize == True:
         num_users_per_month = (
-            visits_to_plot.groupby(["month", "Group"])["uid"]
+            visits_to_plot.groupby([time_unit, "Group"])["uid"]
             .nunique()
             .to_frame()
             .reset_index()
