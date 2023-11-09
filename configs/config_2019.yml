@@ -1,0 +1,60 @@
+run:
+  name: "year_2019"
+  working_dir: "/Users/emilyrobitschek/git/ETH/SPUR/mobile_data_colombia/" # modify as needed
+  in_dir: "/Users/emilyrobitschek/git/ETH/SPUR/mobile_data_colombia/data/" # modify as needed
+  out_dir: "./out/"
+  results_dir: "./out/results/"
+  models_dir: "./out/models/"
+  logs_dir: "./out/logs/"
+  user_stats_dir_both_years: "./out/all_years/user_stats/"
+
+data: 
+  dataset_name: "year=2019"
+  year: "year=2019"
+  data_year: "/Users/emilyrobitschek/git/ETH/SPUR/mobile_data_colombia/data/year=2019/" # modify as needed
+  initial_cols: ["device_id", "id_type", "latitude", "longitude", "horizontal_accuracy", "timestamp", "ip_address", "device_os", "country", "unknown_2", "geohash"]
+  sel_cols: ["device_id", "latitude", "longitude", "timestamp", "geohash", "horizontal_accuracy"]
+  final_cols: ["uid", "lat", "lng", "datetime", "geohash", "horizontal_accuracy"]
+  datatypes: 
+    device_id: "object"
+    id_type: "object"
+    latitude: "float64"
+    longitude: "float64"
+    horizontal_accuracy: "float32"
+    timestamp: "int64"
+    ip_address: "object"
+    device_os: "object"
+    country: "object"
+    unknown_2: "int64"
+    geohash: "object"
+  
+meta: 
+  shp:
+    study_area: 'union_utam_localidad_study_area'
+    zat: 'zat_stratum'
+    visits: 
+      15m: 'POI_Buffer15m'
+      20m: 'POI_Buffer20m'
+
+
+filter:
+  boundary_box: 
+    minlon: -74.453
+    maxlon: -73.992
+    minlat: 3.727
+    maxlat: 4.835
+  qc: 
+    min_pings: 60
+    min_days: 10 
+    processed: "./data/processed/"
+
+
+user_locs: 
+  home: 
+    start_time: '22:00'
+    end_time: '06:00'
+  work: 
+    start_time: '08:00'
+    end_time: '18:00'
+
+
