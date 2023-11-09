@@ -251,7 +251,7 @@ def plot_visits_bar(
     plot_dir: str,
     title: str,
     palette: List[Tuple[float, float, float]] = sns.color_palette("Paired"),
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: Tuple[int, int] = (16, 2),  # TODO: not used, remove this later
 ) -> None:
     """Creates a bar plot for visits data.
 
@@ -266,12 +266,38 @@ def plot_visits_bar(
         figsize: The width and height of the plot in inches.
     """
     sns.set_style("whitegrid", {"axes.grid": False})
-    plt.figure(figsize=figsize)
-    ax = sns.barplot(data=data, x=x, y=y, hue=hue, palette=palette)
+    if x == "month":
+        plt.figure(figsize=(6, 4))
+        ylim_ranges = {
+            "count": 500000,
+            "percentage": 100,
+            "count_normalized_nusers": 50,
+        }
+    elif x == "dayofyear":
+        plt.figure(figsize=(16, 2))
+        ylim_ranges = {"count": 25000, "percentage": 100, "count_normalized_nusers": 15}
+    else:
+        raise ValueError("x must be either 'month' or 'dayofyear'")
+    ax = sns.barplot(data=data, x=x, y=y, hue=hue, palette=palette, edgecolor="none")
 
     plt.title(label=title, fontsize=12)
+    if y in ylim_ranges.keys():
+        plt.ylim(top=ylim_ranges[y])
+    else:
+        raise ValueError(
+            "y must be either 'count_normalized_nusers' or 'percentage' or 'count'"
+        )
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
+    if x == "month":
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+    elif x == "dayofyear":
+        plt.title(label=title, fontsize=10)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="right")
+        sns.set(font_scale=0.5)
+        ax.xaxis.set_major_locator(plt.MaxNLocator(50))
+    else:
+        raise ValueError("x must be either 'month' or 'dayofyear'")
     ax.legend(loc="upper left", bbox_to_anchor=(1, 1), frameon=False)
     plt.savefig(f"{plot_dir}{title}.png", dpi=200, bbox_inches="tight")
     plt.show()
