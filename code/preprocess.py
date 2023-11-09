@@ -385,7 +385,7 @@ def write_filter_user_stats(
     print(f"There are {len(user_stats)} users in this dataset.")
 
     if filter_by_frequency:
-        output_filepath = f"{output_dir}user_stats_{year}_minpings{min_pings}_mindays{min_days}_shp_filtered.csv"
+        output_filepath = f"{output_dir}user_stats_{year}_{min_pings}min_pings_{min_days}min_days_shp_filtered.csv"
         user_stats = user_stats[
             (user_stats["pings"] >= min_pings) & (user_stats["daysActive"] >= min_days)
         ]
@@ -634,3 +634,4 @@ def filter_users_by_minimum_visits(
         f"Visits from {num_users_filtered} of {num_users} users had at least {visit_threshold} visits."
     )
     return visit_df
+
