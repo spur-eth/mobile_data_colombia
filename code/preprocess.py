@@ -635,3 +635,26 @@ def filter_users_by_minimum_visits(
     )
     return visit_df
 
+def filter_pings_for_visit_approx(df: pd.DataFrame, time_window_minutes: int=20) -> pd.DataFrame:
+    """For each user, filters out pings in the time window from the previous ping as a simple way to approximate visits.
+    
+    Args: 
+        df: the dataframe of pings
+        time_window_minutes: the time window in minutes to use to filter pings
+
+    Returns:
+        A dataframe of pings with only the pings that are outside the time window from the previous ping
+        
+    """
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    df = df.sort_values(by=['uid', 'datetime'])
+
+    def filter_user_pings(user_df):
+        user_df['time_diff'] = user_df['datetime'].diff()
+
+        # keep pings where the time difference is greater than the window or if it is the first ping
+        keep_pings = (user_df['time_diff'] > pd.Timedelta(minutes=time_window_minutes)) | user_df['time_diff'].isna()
+        
+        return user_df[keep_pings]
+
+    return df.groupby('uid').apply(filter_user_pings).reset_index(drop=True)
