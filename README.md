@@ -35,6 +35,7 @@ The main notebooks are numbered in order of execution and their basic functional
 - `01_find_filter_user_homes.pynb` : can be used to calculated the home and work location of each user and then record those whose home location is within a treatment or control ZAT
 - `02_mobility_analysis.ipynb`: computes distance between home and work locations for each user and visits of different length 
 - `03_visit_compute.ipynb`: maps the visits computed in the `mobility_analysis` notebook to POIs from Google
-- `04_visit_analysis.ipynb`: generates graphs for some introductory overview of the temporal patterns of user visits detected over days and months for each year. 
+- `04_visit_analysis.ipynb`: generates graphs for some introductory overview of the temporal patterns of user visits detected over days and months for each year.
+- `2018_2019_initial_comparison.ipynb`: shows an initial comparison of data volume and users detected across the years
 
 ### Additional resources: 
